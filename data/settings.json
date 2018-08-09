@@ -1,0 +1,10 @@
+{
+  "scale":{
+    "id_name_admin":"admin",
+    "id_pass_admin":"1234"
+  },
+  "server":{
+    "timeout":3000,
+    "bat_max": 1000
+  }
+}
