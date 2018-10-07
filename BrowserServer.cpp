@@ -12,6 +12,8 @@
 #include "Core.h"
 #include "Version.h"
 #include "HttpUpdater.h"
+#include "slave_config.h"
+
 
 /* */
 //ESP8266HTTPUpdateServer httpUpdater;
@@ -40,7 +42,9 @@ void BrowserServerClass::begin() {
 	/* Setup the DNS server redirecting all the domains to the apIP */
 	dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
 	dnsServer.start(DNS_PORT, "*", apIP);	
-	_downloadHTTPAuth();
+	//_downloadHTTPAuth();
+	_httpAuth.wwwUsername = "sa";
+	_httpAuth.wwwPassword = "343434";
 	ws.onEvent(onWsEvent);
 	addHandler(&ws);
 	CORE = new CoreClass(_httpAuth.wwwUsername.c_str(), _httpAuth.wwwPassword.c_str());
@@ -61,9 +65,9 @@ void BrowserServerClass::init(){
 	//on("/sn",WebRequestMethod::HTTP_GET,handleAccessPoint);						/* Установить Настройки точки доступа */
 	//on("/sn",WebRequestMethod::HTTP_POST, std::bind(&CoreClass::handleSetAccessPoint, CORE, std::placeholders::_1));					/* Установить Настройки точки доступа */
 	//on("/settings.html", HTTP_ANY, std::bind(&CoreClass::saveValueSettingsHttp, CORE, std::placeholders::_1));					/* Открыть страницу настроек или сохранить значения. */
-	on("/settings.json", handleFileReadAuth);
+	on("/settings.json", handleSettings);
 	on("/sv", handleScaleProp);									/* Получить значения. */
-	on("/admin.html", std::bind(&BrowserServerClass::send_wwwauth_configuration_html, this, std::placeholders::_1));
+	//on("/admin.html", std::bind(&BrowserServerClass::send_wwwauth_configuration_html, this, std::placeholders::_1));
 	//on("/secret.json",handleFileReadAdmin);
 	serveStatic("/secret.json", SPIFFS, "/").setDefaultFile("secret.json").setAuthentication(_httpAuth.wwwUsername.c_str(), _httpAuth.wwwPassword.c_str());
 												
@@ -79,15 +83,22 @@ void BrowserServerClass::init(){
 	size_t headerkeyssize = sizeof(headerkeys)/sizeof(char*);
 	//ask server to track these headers
 	collectHeaders(headerkeys, headerkeyssize );*/
-	rewrite("/", "/settings.html");
-	serveStatic("/", SPIFFS, "/");
+	//rewrite("/", "/settings.html");
+	//serveStatic("/", SPIFFS, "/");
 	//serveStatic("/", SPIFFS, "/").setDefaultFile("index-ap.html").setFilter(ON_AP_FILTER);
 	//rewrite("/", "index-ap.html").setFilter(ON_AP_FILTER);
+#ifdef HTML_PROGMEM
+	on("/",[](AsyncWebServerRequest * reguest){	reguest->send_P(200,F("text/html"),settings_html);});								/* Главная страница. */	
+	on("/global.css",[](AsyncWebServerRequest * reguest){	reguest->send_P(200,F("text/css"),global_css);});					/* Стили */
+#else
+	serveStatic("/", SPIFFS, "/").setDefaultFile("settings.html");	
+#endif
 	onNotFound([](AsyncWebServerRequest *request){
 		request->send(404);
 	});
 }
 
+/*
 void BrowserServerClass::send_wwwauth_configuration_html(AsyncWebServerRequest *request) {
 	if (!checkAdminAuth(request))
 		return request->requestAuthentication();
@@ -99,8 +110,9 @@ void BrowserServerClass::send_wwwauth_configuration_html(AsyncWebServerRequest *
 		_saveHTTPAuth();
 	}
 	request->send(SPIFFS, request->url());
-}
+}*/
 
+/*
 bool BrowserServerClass::_saveHTTPAuth() {
 	
 	DynamicJsonBuffer jsonBuffer(256);
@@ -120,8 +132,9 @@ bool BrowserServerClass::_saveHTTPAuth() {
 	configFile.flush();
 	configFile.close();
 	return true;
-}
+}*/
 
+/*
 bool BrowserServerClass::_downloadHTTPAuth() {
 	_httpAuth.wwwUsername = "sa";
 	_httpAuth.wwwPassword = "343434";
@@ -145,7 +158,7 @@ bool BrowserServerClass::_downloadHTTPAuth() {
 	_httpAuth.wwwUsername = json["user"].as<String>();
 	_httpAuth.wwwPassword = json["pass"].as<String>();
 	return true;
-}
+}*/
 
 bool BrowserServerClass::checkAdminAuth(AsyncWebServerRequest * r) {	
 	return r->authenticate(_httpAuth.wwwUsername.c_str(), _httpAuth.wwwPassword.c_str());
@@ -162,7 +175,7 @@ void BrowserServerClass::restart_esp() {
 }*/
 
 bool BrowserServerClass::isAuthentified(AsyncWebServerRequest * request){
-	if (!request->authenticate(CORE->getNameAdmin().c_str(), CORE->getPassAdmin().c_str())){
+	if (!request->authenticate(CORE->getNameAdmin(), CORE->getPassAdmin())){
 		if (!checkAdminAuth(request)){
 			return false;
 		}
@@ -170,11 +183,33 @@ bool BrowserServerClass::isAuthentified(AsyncWebServerRequest * request){
 	return true;
 }
 
+/*
 void handleFileReadAuth(AsyncWebServerRequest * request){
 	if (!browserServer.isAuthentified(request)){
 		return request->requestAuthentication();
 	}
 	request->send(SPIFFS, request->url());
+}*/
+
+void handleSettings(AsyncWebServerRequest * request){
+	if (!browserServer.isAuthentified(request))
+		return request->requestAuthentication();
+#ifdef HTML_PROGMEM
+	AsyncResponseStream *response = request->beginResponseStream("application/json");
+	DynamicJsonBuffer jsonBuffer;
+	JsonObject &root = jsonBuffer.createObject();
+	JsonObject& scale = root.createNestedObject(SCALE_JSON);
+	scale["bat_max"] = CoreMemory.eeprom.settings.bat_max;
+	scale["id_assid"] = CoreMemory.eeprom.settings.apSSID;
+	scale["id_n_admin"] = CoreMemory.eeprom.settings.scaleName;
+	scale["id_p_admin"] = CoreMemory.eeprom.settings.scalePass;
+	scale["id_ssid"] = String(CoreMemory.eeprom.settings.wSSID);
+	
+	root.printTo(*response);
+	request->send(response);
+#else
+	request->send(SPIFFS, request->url());
+#endif
 }
 
 void handleScaleProp(AsyncWebServerRequest * request){
@@ -182,8 +217,8 @@ void handleScaleProp(AsyncWebServerRequest * request){
 		return request->requestAuthentication();
 	AsyncJsonResponse * response = new AsyncJsonResponse();
 	JsonObject& root = response->getRoot();
-	root["id_local_host"] = String(MY_HOST_NAME);
-	root["id_ap_ssid"] = String(SOFT_AP_SSID);
+	root["id_local_host"] = WiFi.hostname();
+	root["id_ap_ssid"] = String(WiFi.softAPSSID());
 	root["id_ap_ip"] = toStringIp(WiFi.softAPIP());
 	root["id_ip"] = toStringIp(WiFi.localIP());
 	root["sl_id"] = String(Scale.getSeal());

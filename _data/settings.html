@@ -14,55 +14,76 @@
         input[type=submit]{width:auto;}
     </style>
     <script>
+        var d = document;
         function GetValue(){
-            var req=new XMLHttpRequest();
-            req.overrideMimeType('application/json');
-            req.onreadystatechange=function(){
-                if (this.readyState===4 ){
-                    if(this.status===200){
-                        var json=JSON.parse(this.responseText);
+            var r=new XMLHttpRequest();
+            r.overrideMimeType('application/json');
+            r.onreadystatechange=function(){
+                if (r.readyState===4 ){
+                    if(r.status===200){
+                        var json=JSON.parse(r.responseText);
                         for (entry in json){
                             try{
-                                document.getElementById(entry).innerHTML=json[entry];
+                                d.getElementById(entry).innerHTML=json[entry];
                             }catch (e){}
                         }
                     }
                 }
             };
-            req.open("GET", "/sv", true);
-            req.send(null);
+            r.open("GET", "/sv", true);
+            r.send(null);
         }
         function GetSettings(){
-            var req=new XMLHttpRequest();
-            req.overrideMimeType('application/json');
-            req.onreadystatechange=function(){
-                if (this.readyState===4){
-                    if(this.status===200){
+            var r=new XMLHttpRequest();
+            r.overrideMimeType('application/json');
+            r.onreadystatechange=function(){
+                if (r.readyState===4){
+                    if(r.status===200){
                         try{
-                            var json=JSON.parse(req.responseText);
+                            var json=JSON.parse(r.responseText);
                             var scale=json.scale;
                             for (entry in scale){
                                 try{
-                                    document.getElementById(entry).value=scale[entry];
+                                    d.getElementById(entry).value=scale[entry];
                                 }catch (e){}
                             }
                             var server=json.server;
                             for (entry in server){
                                 try{
-                                    document.getElementById(entry).value=server[entry];
+                                    d.getElementById(entry).value=server[entry];
                                 }catch (e){}
                             }
                         }catch(e){
                             alert(e.toString());
                         }finally{
-                            document.body.style.visibility='visible';
+                            d.body.style.visibility='visible';
                             GetValue();
                         }
                     }
                 }
             };
-            req.open("GET", "/settings.json", true);
-            req.send(null);
+            r.open("GET", "/settings.json", true);
+            r.send(null);
+        }
+        function formNet(i) {
+            var f = new FormData(d.getElementById(i));
+            var r = new XMLHttpRequest();
+            r.onreadystatechange = function() {
+                if (r.readyState === 4) {
+                    if (r.status === 200) {
+                        var rec = confirm('Перегрузить');
+                        if (rec) {
+                            r.onreadystatechange = null;
+                            r.open('GET', '/rc', true);
+                            r.send(null);
+                        }
+                    } else if (r.status === 400) {
+                        alert('Настройки не изменились');
+                    }
+                }
+            };
+            r.open('POST', '/settings.html', true);
+            r.send(f);
         }
         window.onload=function(){
             GetSettings();
@@ -74,16 +95,48 @@
 <br/>
 <fieldset style="width: auto"><details><summary>Общии настройки</summary>
     <br>
+    <h5 align='left'><b>для соединения с MASTER</b></h5>
+    <form id='form_ssid_id' action='javascript:formNet("form_ssid_id")'>
+        <table>
+            <tr>
+                <td>MASTER:</td>
+                <td>
+                    <input id='id_ssid' name='ssid' placeholder='имя master'> </td>
+            </tr>
+            <tr>
+                <td></td>
+                <td>
+                    <input type='submit' value='СОХРАНИТЬ' /> </td>
+            </tr>
+        </table>
+    </form>
+    <hr>
+    <form id='form_assid_id' action='javascript:formNet("form_assid_id")'>
+        <h5 align='left'><b>Имя SLAVE</b></h5>
+        <table>
+            <tr>
+                <td>SLAVE:  </td>
+                <td>
+                    <input id='id_assid' name='assid' placeholder='имя slave'> </td>
+            </tr>
+            <tr>
+                <td></td>
+                <td>
+                    <input type='submit' value='УСТАНОВИТЬ' /> </td>
+            </tr>
+        </table>
+    </form>
+    <hr>
     <form method='POST'>
         <h5>Доступ к настройкам</h5>
         <table>
             <tr>
                 <td>ИМЯ:</td>
-                <td><input id="id_name_admin" name="name_admin" placeholder='имя админ'></td>
+                <td><input id="id_n_admin" name="n_admin" placeholder='имя админ'></td>
             </tr>
             <tr>
                 <td>ПАРОЛЬ:</td>
-                <td><input type="password" id="id_pass_admin" name="pass_admin" placeholder='пароль админ'></td>
+                <td><input type="password" id="id_p_admin" name="p_admin" placeholder='пароль админ'></td>
             </tr>
             <tr>
                 <td></td>

@@ -20,11 +20,11 @@
 #define SECRET_FILE "/secret.json"
 #define TEXT_HTML	"text/html"
 
-#define MY_HOST_NAME "slave"
-#define SOFT_AP_SSID "SLAVE"
+//#define MY_HOST_NAME "slave"
+//#define SOFT_AP_SSID "SLAVE"
 #define SOFT_AP_PASSWORD "12345678"
 
-#define MASTER_SSID "SCALES_TRAVERS"
+//#define MASTER_SSID "SCALES_TRAVERS"
 #define MASTER_PASSWORD "23232323"
 
 // DNS server
@@ -40,8 +40,8 @@ class AsyncWebServer;
 class BrowserServerClass : public AsyncWebServer{
 	protected:
 		strHTTPAuth _httpAuth;
-		bool _saveHTTPAuth();		
-		bool _downloadHTTPAuth();		
+		//bool _saveHTTPAuth();		
+		//bool _downloadHTTPAuth();		
 
 	public:
 	
@@ -51,7 +51,7 @@ class BrowserServerClass : public AsyncWebServer{
 		void init();
 		//static String urldecode(String input); // (based on https://code.google.com/p/avr-netino/)
 		//static unsigned char h2int(char c);
-		void send_wwwauth_configuration_html(AsyncWebServerRequest *request);
+		//void send_wwwauth_configuration_html(AsyncWebServerRequest *request);
 		//void restart_esp();		
 		String getContentType(String filename);	
 		//bool isValidType(String filename);		
@@ -95,7 +95,8 @@ extern AsyncWebSocket ws;
 //void send_update_firmware_values_html();
 //void setUpdateMD5();
 //void handleFileReadAdmin(AsyncWebServerRequest*);
-void handleFileReadAuth(AsyncWebServerRequest*);
+//void handleFileReadAuth(AsyncWebServerRequest*);
+void handleSettings(AsyncWebServerRequest * request);
 void handleAccessPoint(AsyncWebServerRequest*);
 void handleScaleProp(AsyncWebServerRequest*);
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);

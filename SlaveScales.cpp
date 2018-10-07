@@ -1,11 +1,14 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <WebSocketsClient.h>
+#include <functional>
 #include "BrowserServer.h"
 #include "Core.h"
 #include "Task.h"
 #include "HttpUpdater.h"
 
+using namespace std;
+using namespace std::placeholders;
 /*
  * This example serves a "hello world" on a WLAN and a SoftAP at the same time.
  * The SoftAP allow you to configure WLAN parameters at run time. They are not setup in the sketch but saved on EEPROM.
@@ -20,7 +23,7 @@
 
 void onSTAGotIP(const WiFiEventStationModeGotIP& evt);
 void onSTADisconnected(const WiFiEventStationModeDisconnected& evt);
-void takeBlink();
+//void takeBlink();
 void takeBattery();
 void takeWeight();
 //void powerSwitchInterrupt();
@@ -30,7 +33,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length);
 WebSocketsClient webSocket;
 //
 TaskController taskController = TaskController();		/*  */
-Task taskBlink(takeBlink, 500);							/*  */
+//Task taskBlink(takeBlink, 500);							/*  */
 Task taskBattery(takeBattery, 20000);					/* 20 Обновляем заряд батареи */
 //WiFi.channel(i);Task taskPower(powerOff, 2400000);						/* 10 минут бездействия и выключаем */
 Task taskConnectWiFi(connectWifi, 5000);				/* Пытаемся соедениться с точкой доступа каждые 60 секунд */
@@ -38,8 +41,8 @@ Task taskWeight(takeWeight,200);
 WiFiEventHandler STAGotIP;
 WiFiEventHandler STADisconnected;
 
-unsigned int COUNT_FLASH = 500;
-unsigned int COUNT_BLINK = 500;
+//unsigned int COUNT_FLASH = 500;
+//unsigned int COUNT_BLINK = 500;
 #define USE_SERIAL Serial
 //HTTPClient http;
 
@@ -53,13 +56,13 @@ void setup() {
 	/*while (digitalRead(PWR_SW) == HIGH){
 		delay(100);
 	};*/
-	
+	BLINK = new BlinkClass();
 	SPIFFS.begin();
 	browserServer.begin();
 	Scale.setup(&browserServer);	
 	takeBattery();
   
-	taskController.add(&taskBlink);
+	taskController.add(BLINK);
 	taskController.add(&taskBattery);
 	taskController.add(&taskConnectWiFi);
 	taskController.add(&taskWeight);
@@ -75,9 +78,9 @@ void setup() {
 	WiFi.setAutoReconnect(true);
 	//WiFi.smartConfigDone();
 	WiFi.mode(WIFI_AP_STA);
-	WiFi.hostname(MY_HOST_NAME);
+	WiFi.hostname(CORE->getHostname());
 	WiFi.softAPConfig(apIP, apIP, netMsk);
-	WiFi.softAP(SOFT_AP_SSID, SOFT_AP_PASSWORD);
+	WiFi.softAP(CORE->getApSSID(), SOFT_AP_PASSWORD);
 	delay(500); 
 	
 	connectWifi();
@@ -95,11 +98,12 @@ void setup() {
 /*********************************/
 /* */
 /*********************************/
+/*
 void takeBlink() {
 	bool led = !digitalRead(LED);
 	digitalWrite(LED, led);	
 	taskBlink.setInterval(led ? COUNT_BLINK : COUNT_FLASH);
-}
+}*/
 
 /**/
 void takeBattery(){
@@ -147,19 +151,25 @@ void connectWifi() {
 		goto scan;
 	}
 	connect:
+		if (String(CORE->getSSID()).length()==0){
+			WiFi.setAutoConnect(false);
+			WiFi.setAutoReconnect(false);
+			taskConnectWiFi.pause();
+			return;
+		}
 		for (int i = 0; i < n; ++i)	{
-			if(WiFi.SSID(i) == MASTER_SSID/*CORE->getSSID().c_str()*/){
-				//USE_SERIAL.println(CORE.getSSID());
-				String ssid_scan;
-				int32_t rssi_scan;
-				uint8_t sec_scan;
-				uint8_t* BSSID_scan;
-				int32_t chan_scan;
-				bool hidden_scan;
+			if(WiFi.SSID(i).equals(CORE->getSSID())){
+				int32_t chan_scan = WiFi.channel(i);
+				//String ssid_scan;
+				//int32_t rssi_scan;
+				//uint8_t sec_scan;
+				//uint8_t* BSSID_scan = WiFi.BSSID(i);
+				//int32_t chan_scan;
+				//bool hidden_scan;
 
-				WiFi.getNetworkInfo(i, ssid_scan, sec_scan, rssi_scan, BSSID_scan, chan_scan, hidden_scan);
-				WiFi.softAP(SOFT_AP_SSID, SOFT_AP_PASSWORD, chan_scan); //Устанавливаем канал как роутера
-				WiFi.begin ( MASTER_SSID/*CORE->getSSID().c_str()*/, MASTER_PASSWORD/*CORE->getPASS().c_str()*/,chan_scan,BSSID_scan);
+				//WiFi.getNetworkInfo(i, ssid_scan, sec_scan, rssi_scan, BSSID_scan, chan_scan, hidden_scan);
+				WiFi.softAP(CORE->getApSSID(), SOFT_AP_PASSWORD, chan_scan); //Устанавливаем канал как роутера
+				WiFi.begin ( CORE->getSSID()/*CORE->getSSID().c_str()*/,String(MASTER_PASSWORD).c_str() /*CORE->getPASS().c_str()*/,chan_scan);
 				//WiFi.begin ( CORE.getSSID().c_str(), CORE.getPASS().c_str());
 				int status = WiFi.waitForConnectResult();
 				return;
@@ -194,11 +204,7 @@ void loop() {
 void onSTAGotIP(const WiFiEventStationModeGotIP& evt) {
 	taskConnectWiFi.pause();
 	webSocket.begin(evt.gw.toString(), 80, "/ss");
-	//Serial.println(String(evt.channel));
-	//WiFi.softAPdisconnect();
-	//WiFi.softAP(SOFT_AP_SSID, SOFT_AP_PASSWORD, evt.channel); //Устанавливаем канал как роутера
-	COUNT_FLASH = 50;
-	COUNT_BLINK = 3000;
+	BLINK->onRun(bind(&BlinkClass::blinkSTA,BLINK));
 }
 
 void onSTADisconnected(const WiFiEventStationModeDisconnected& evt) {
@@ -206,8 +212,7 @@ void onSTADisconnected(const WiFiEventStationModeDisconnected& evt) {
 	WiFi.scanDelete();
 	WiFi.scanNetworks(true);
 	taskConnectWiFi.resume();
-	COUNT_FLASH = 500;
-	COUNT_BLINK = 500;
+	BLINK->onRun(bind(&BlinkClass::blinkAP,BLINK));
 }
 
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
