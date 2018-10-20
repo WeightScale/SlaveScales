@@ -3,6 +3,7 @@
 #include <WebSocketsClient.h>
 #include <functional>
 #include "BrowserServer.h"
+#include "ESP8266NetBIOS.h"
 #include "Core.h"
 #include "Task.h"
 #include "HttpUpdater.h"
@@ -170,8 +171,10 @@ void connectWifi() {
 				//WiFi.getNetworkInfo(i, ssid_scan, sec_scan, rssi_scan, BSSID_scan, chan_scan, hidden_scan);
 				WiFi.softAP(CORE->getApSSID(), SOFT_AP_PASSWORD, chan_scan); //Устанавливаем канал как роутера
 				WiFi.begin ( CORE->getSSID()/*CORE->getSSID().c_str()*/,String(MASTER_PASSWORD).c_str() /*CORE->getPASS().c_str()*/,chan_scan);
-				//WiFi.begin ( CORE.getSSID().c_str(), CORE.getPASS().c_str());
-				int status = WiFi.waitForConnectResult();
+				//WiFi.begin ( CORE.getSSID().c_str(), CORE.getPASS().c_str());				
+				if(WiFi.waitForConnectResult()){
+					NBNS.begin(CORE->getHostname().c_str());
+				}
 				return;
 			}
 		}

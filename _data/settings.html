@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no'/>
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-    <meta http-equiv="Pragma" content="no-cache"/>
+    <meta http-equiv='Cache-Control' content="no-cache, no-store, must-revalidate"/>
+    <meta http-equiv='Pragma' content="no-cache"/>
     <title>Настройки</title>
-    <link rel="stylesheet" type="text/css" href="global.css">
+    <link rel='stylesheet' type="text/css" href='global.css'>
     <style>
         input:focus{background: #FA6;outline: none;}
         table{width:100%;}
@@ -21,10 +21,10 @@
             r.onreadystatechange=function(){
                 if (r.readyState===4 ){
                     if(r.status===200){
-                        var json=JSON.parse(r.responseText);
-                        for (entry in json){
+                        let j = JSON.parse(r.responseText);
+                        for (v in j){
                             try{
-                                d.getElementById(entry).innerHTML=json[entry];
+                                d.getElementById(v).innerHTML=j[v];
                             }catch (e){}
                         }
                     }
@@ -40,17 +40,10 @@
                 if (r.readyState===4){
                     if(r.status===200){
                         try{
-                            var json=JSON.parse(r.responseText);
-                            var scale=json.scale;
-                            for (entry in scale){
+                            let j=JSON.parse(r.responseText);
+                            for (v in j){
                                 try{
-                                    d.getElementById(entry).value=scale[entry];
-                                }catch (e){}
-                            }
-                            var server=json.server;
-                            for (entry in server){
-                                try{
-                                    d.getElementById(entry).value=server[entry];
+                                    d.getElementById(v).value=j[v];
                                 }catch (e){}
                             }
                         }catch(e){
@@ -104,7 +97,7 @@
                     <input id='id_ssid' name='ssid' placeholder='имя master'> </td>
             </tr>
             <tr>
-                <td></td>
+                <td/>
                 <td>
                     <input type='submit' value='СОХРАНИТЬ' /> </td>
             </tr>
@@ -120,7 +113,7 @@
                     <input id='id_assid' name='assid' placeholder='имя slave'> </td>
             </tr>
             <tr>
-                <td></td>
+                <td/>
                 <td>
                     <input type='submit' value='УСТАНОВИТЬ' /> </td>
             </tr>
@@ -139,7 +132,7 @@
                 <td><input type="password" id="id_p_admin" name="p_admin" placeholder='пароль админ'></td>
             </tr>
             <tr>
-                <td></td>
+                <td/>
                 <td><input type='submit' value='СОХРАНИТЬ'/></td>
             </tr>
         </table>
@@ -153,22 +146,22 @@
         <table>
             <tr>
                 <td><h5>Имя хоста:</h5></td>
-                <td align="right"><h5 id="id_local_host"></h5></td>
+                <td align='right'><h5 id='id_local_host'></h5></td>
             </tr>
         </table>
         <hr>
         <h5 align='left'><b>Точка доступа весов</b></h5>
         <table>
             <tr>
-                <td id="id_ap_ssid"></td>
-                <td align="right" id="id_ap_ip"></td>
+                <td id='id_ap_ssid'></td>
+                <td align='right' id='id_ap_ip'></td>
             </tr>
         </table>
         <hr>
         <table>
             <tr>
                 <td>Пломба:</td>
-                <td align="right"><div id="sl_id"></div></td>
+                <td align='right'><div id='sl_id'></div></td>
             </tr>
         </table>
         <hr>
@@ -176,6 +169,6 @@
     </details>
 </fieldset>
 <hr>
-<footer align="center">2018 © Powered by www.scale.in.ua</footer>
+<footer align='center'>2018 © Powered by www.scale.in.ua</footer>
 </body>
 </html>

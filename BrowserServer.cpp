@@ -198,12 +198,12 @@ void handleSettings(AsyncWebServerRequest * request){
 	AsyncResponseStream *response = request->beginResponseStream("application/json");
 	DynamicJsonBuffer jsonBuffer;
 	JsonObject &root = jsonBuffer.createObject();
-	JsonObject& scale = root.createNestedObject(SCALE_JSON);
-	scale["bat_max"] = CoreMemory.eeprom.settings.bat_max;
-	scale["id_assid"] = CoreMemory.eeprom.settings.apSSID;
-	scale["id_n_admin"] = CoreMemory.eeprom.settings.scaleName;
-	scale["id_p_admin"] = CoreMemory.eeprom.settings.scalePass;
-	scale["id_ssid"] = String(CoreMemory.eeprom.settings.wSSID);
+	//JsonObject& scale = root.createNestedObject(SCALE_JSON);
+	root["bat_max"] = CoreMemory.eeprom.settings.bat_max;
+	root["id_assid"] = CoreMemory.eeprom.settings.apSSID;
+	root["id_n_admin"] = CoreMemory.eeprom.settings.scaleName;
+	root["id_p_admin"] = CoreMemory.eeprom.settings.scalePass;
+	root["id_ssid"] = String(CoreMemory.eeprom.settings.wSSID);
 	
 	root.printTo(*response);
 	request->send(response);

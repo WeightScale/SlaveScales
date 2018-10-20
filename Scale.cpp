@@ -275,7 +275,24 @@ void ScaleClass::formatValue(float value, char* string){
 void ScaleClass::detectStable(float w){	
 	static float weight_temp;
 	static unsigned char stable_num;
-	if (weight_temp == w) {
+	
+	if (weight_temp != w){
+		stable_num = 0;
+		stableWeight = false;
+		weight_temp = w;
+		return;	
+	}
+	stable_num++;
+	if (stable_num < STABLE_NUM_MAX){
+		return;
+	}
+	
+	if (stableWeight){
+		return;
+	}
+	stableWeight = true;
+	
+	/*if (weight_temp == w) {
 		if (stable_num > STABLE_NUM_MAX) {
 			if (!stableWeight){				
 				stableWeight = true;
@@ -287,7 +304,7 @@ void ScaleClass::detectStable(float w){
 		stable_num = 0;
 		stableWeight = false;
 	}
-	weight_temp = w;
+	weight_temp = w;*/
 }
 
 void ScaleClass::handleWeight(AsyncWebServerRequest * request){
