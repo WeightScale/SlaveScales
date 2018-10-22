@@ -1,5 +1,5 @@
 #include <ESP8266WiFi.h>
-#include <ESP8266HTTPClient.h>
+//#include <ESP8266HTTPClient.h>
 #include <WebSocketsClient.h>
 #include <functional>
 #include "BrowserServer.h"
@@ -22,6 +22,8 @@ using namespace std::placeholders;
  * This is a captive portal because through the softAP it will redirect any http request to http://192.168.4.1/
  */
 
+//const char ssid[] = "Master2";
+
 void onSTAGotIP(const WiFiEventStationModeGotIP& evt);
 void onSTADisconnected(const WiFiEventStationModeDisconnected& evt);
 //void takeBlink();
@@ -29,6 +31,7 @@ void takeBattery();
 void takeWeight();
 //void powerSwitchInterrupt();
 void connectWifi();
+void prinScanResult(int networksFound);
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length);
 
 WebSocketsClient webSocket;
@@ -65,7 +68,7 @@ void setup() {
   
 	taskController.add(BLINK);
 	taskController.add(&taskBattery);
-	taskController.add(&taskConnectWiFi);
+	//taskController.add(&taskConnectWiFi);
 	taskController.add(&taskWeight);
 	//taskController.add(&taskPower);	
 
@@ -83,7 +86,7 @@ void setup() {
 	WiFi.softAPConfig(apIP, apIP, netMsk);
 	WiFi.softAP(CORE->getApSSID(), SOFT_AP_PASSWORD);
 	delay(500); 
-	
+	taskController.add(&taskConnectWiFi);
 	connectWifi();
 	
 	 
@@ -137,9 +140,48 @@ void powerSwitchInterrupt(){
 }*/
 
 void connectWifi() {
-	//USE_SERIAL.println("Connecting...");
+	taskConnectWiFi.pause();
+	if (String(CORE->getSSID()).length() == 0) {
+		WiFi.setAutoConnect(false);
+		WiFi.setAutoReconnect(false);
+		return;
+	}
+	if (WiFi.SSID().equals(CORE->getSSID())) {
+		WiFi.begin();
+		return;
+	}
 	WiFi.disconnect(false);
 	/*!  */
+	int n = WiFi.scanComplete();
+	if (n == -2) {
+		WiFi.scanNetworksAsync(prinScanResult, true);
+	}else if (n > 0) {
+		prinScanResult(n);
+	}	
+}
+
+void prinScanResult(int networksFound) {
+	for (int i = 0; i < networksFound; ++i) {
+		if (WiFi.SSID(i).equals(CORE->getSSID())) {
+			WiFi.persistent(true);
+			WiFi.begin(CORE->getSSID(),String(MASTER_PASSWORD).c_str());
+			return;
+		}
+	}
+	WiFi.scanDelete();
+	taskConnectWiFi.resume();
+}
+
+/*
+void connectWifi() {
+	if (String(CORE->getSSID()).length()==0){
+		WiFi.setAutoConnect(false);
+		WiFi.setAutoReconnect(false);
+		taskConnectWiFi.pause();
+		return;
+	}
+	WiFi.disconnect(false);
+	/ *!  * /
 	int n = WiFi.scanComplete();
 	if(n == -2){
 		n = WiFi.scanNetworks();
@@ -151,27 +193,12 @@ void connectWifi() {
 	}else{
 		goto scan;
 	}
-	connect:
-		if (String(CORE->getSSID()).length()==0){
-			WiFi.setAutoConnect(false);
-			WiFi.setAutoReconnect(false);
-			taskConnectWiFi.pause();
-			return;
-		}
+	connect:		
 		for (int i = 0; i < n; ++i)	{
 			if(WiFi.SSID(i).equals(CORE->getSSID())){
 				int32_t chan_scan = WiFi.channel(i);
-				//String ssid_scan;
-				//int32_t rssi_scan;
-				//uint8_t sec_scan;
-				//uint8_t* BSSID_scan = WiFi.BSSID(i);
-				//int32_t chan_scan;
-				//bool hidden_scan;
-
-				//WiFi.getNetworkInfo(i, ssid_scan, sec_scan, rssi_scan, BSSID_scan, chan_scan, hidden_scan);
-				WiFi.softAP(CORE->getApSSID(), SOFT_AP_PASSWORD, chan_scan); //Устанавливаем канал как роутера
-				WiFi.begin ( CORE->getSSID()/*CORE->getSSID().c_str()*/,String(MASTER_PASSWORD).c_str() /*CORE->getPASS().c_str()*/,chan_scan);
-				//WiFi.begin ( CORE.getSSID().c_str(), CORE.getPASS().c_str());				
+				WiFi.softAP(WiFi.softAPSSID().c_str(), SOFT_AP_PASSWORD, chan_scan); //Устанавливаем канал как роутера
+				WiFi.begin ( CORE->getSSID(),String(MASTER_PASSWORD).c_str() ,chan_scan);
 				if(WiFi.waitForConnectResult()){
 					NBNS.begin(CORE->getHostname().c_str());
 				}
@@ -182,7 +209,7 @@ void connectWifi() {
 		WiFi.scanDelete();
 		WiFi.scanNetworks(true);	
 		
-}
+}*/
 
 void loop() {
 	taskController.run();	
@@ -207,13 +234,14 @@ void loop() {
 void onSTAGotIP(const WiFiEventStationModeGotIP& evt) {
 	taskConnectWiFi.pause();
 	webSocket.begin(evt.gw.toString(), 80, "/ss");
-	BLINK->onRun(bind(&BlinkClass::blinkSTA,BLINK));
+	WiFi.softAP(WiFi.softAPSSID().c_str(), SOFT_AP_PASSWORD, WiFi.channel()); //Устанавливаем канал как роутера
+	WiFi.setAutoConnect(true);
+	WiFi.setAutoReconnect(true);
+	NBNS.begin(CORE->getHostname().c_str());
+	BLINK->onRun(bind(&BlinkClass::blinkSTA, BLINK));	
 }
 
 void onSTADisconnected(const WiFiEventStationModeDisconnected& evt) {
-	//Serial.println("DisconnectStation");
-	WiFi.scanDelete();
-	WiFi.scanNetworks(true);
 	taskConnectWiFi.resume();
 	BLINK->onRun(bind(&BlinkClass::blinkAP,BLINK));
 }

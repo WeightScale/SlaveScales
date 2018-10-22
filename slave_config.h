@@ -15,6 +15,6 @@
 	#include "Page.h"
 #endif
 
-#define MIN_CHG 500			//ADC = (Vin * 1024)/Vref  Vref = 1V  Vin = 0.49v  3.5v-4.3v
+#define MIN_CHG 550			//ADC = (Vin * 1024)/Vref  Vref = 1V  Vin = 0.49v  3.5v-4.3v
 
 #endif /* SLAVE_CONFIG_H_ */

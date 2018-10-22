@@ -79,7 +79,7 @@ class CoreClass : public AsyncWebHandler{
 		//bool saveSettings();
 		char* getNameAdmin(){return _settings->scaleName;};
 		char* getPassAdmin(){return _settings->scalePass;};
-		char* getSSID(){return _settings->wSSID;};
+		const char* getSSID(){return _settings->wSSID;};
 		char* getApSSID(){return _settings->apSSID;};
 		String& getHostname(){return _hostname;};	
 		//String& getSSID(){return _settings->scaleWlanSSID;};

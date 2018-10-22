@@ -234,12 +234,12 @@ void handleScaleProp(AsyncWebServerRequest * request){
 	
 	request->send(200, "text/plain", values);*/
 }
-
+/*
 void handleAccessPoint(AsyncWebServerRequest * request){
 	if (!browserServer.isAuthentified(request))
 		return request->requestAuthentication();
 	request->send(200, TEXT_HTML, netIndex);	
-}
+}*/
 
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
 	if(type == WS_EVT_CONNECT){	
@@ -264,11 +264,25 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
 			msg += (char) data[i];
 		}
 		if (msg.equals("/wt")){
+			DynamicJsonBuffer jsonBuffer;
+			JsonObject& json = jsonBuffer.createObject();
+			json["w"] = String(Scale.getBuffer());
+			json["c"] = String(BATTERY.getCharge());
+			json["s"] = Scale.getStableWeight();
+			size_t lengh = json.measureLength();
+			AsyncWebSocketMessageBuffer * buffer = ws.makeBuffer(lengh);
+			if (buffer) {
+				json.printTo((char *)buffer->get(), lengh + 1);
+				if (client) {
+					client->text(buffer);
+				}
+			}
+			
 			/*char buffer[10];		
 			float w = Scale.forTest(ESP.getFreeHeap());
 			Scale.formatValue(w,buffer);
 			Scale.detectStable(w);*/			
-			client->text(String("{\"w\":\""+String(Scale.getBuffer())+"\",\"c\":"+String(BATTERY.getCharge())+",\"s\":"+String(Scale.getStableWeight())+"}"));
+			//client->text(String("{\"w\":\""+String(Scale.getBuffer())+"\",\"c\":"+String(BATTERY.getCharge())+",\"s\":"+String(Scale.getStableWeight())+"}"));
 		}
 	}
 }

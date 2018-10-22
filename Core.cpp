@@ -62,17 +62,14 @@ void CoreClass::handleRequest(AsyncWebServerRequest *request){
 		String message = " ";
 		if (request->hasArg("ssid")){
 			request->arg("ssid").toCharArray(_settings->wSSID,request->arg("ssid").length()+1);	
+			request->arg("assid").toCharArray(_settings->apSSID,request->arg("assid").length()+1);
 			if (String(_settings->wSSID).length()>0){
 				taskConnectWiFi.resume();
-				}else{
+			}else{
 				taskConnectWiFi.pause();
-			}
+			}			
 			goto save;
-		}
-		if (request->hasArg("assid")){
-			request->arg("assid").toCharArray(_settings->apSSID,request->arg("assid").length()+1);
-			goto save;
-		}			
+		}					
 		if (request->hasArg("n_admin")){
 			request->arg("n_admin").toCharArray(_settings->scaleName,request->arg("n_admin").length()+1);
 			request->arg("p_admin").toCharArray(_settings->scalePass,request->arg("p_admin").length()+1);
@@ -80,12 +77,20 @@ void CoreClass::handleRequest(AsyncWebServerRequest *request){
 		}		
 		save:
 		if (CoreMemory.save()){
-			return request->send(200, TEXT_HTML, "OK");
+			//return request->send(200, TEXT_HTML, "OK");
+			goto url;
 		}		
 		return request->send(400);
 	}
-	return request->send(200, TEXT_HTML, settings_html);
-	//request->send(SPIFFS, request->url());
+	url:
+	#ifdef HTML_PROGMEM
+		request->send_P(200,F(TEXT_HTML), settings_html);
+	#else
+		if(request->url().equalsIgnoreCase("/sn")){
+			request->send_P(200, F(TEXT_HTML), netIndex);
+		}else
+			request->send(SPIFFS, request->url());
+	#endif
 }
 
 

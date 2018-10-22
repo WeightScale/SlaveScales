@@ -1,7 +1,7 @@
 #ifndef _VERSION_h
 #define _VERSION_h
 
-#define SKETCH_VERSION "web_travers_slave_scales.001"
+#define SKETCH_VERSION "web_travers_slave_scales.002"
 #define SPIFFS_VERSION "web_travers_slave_scales.001"
 
 /*

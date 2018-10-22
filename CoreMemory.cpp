@@ -7,7 +7,7 @@ void CoreMemoryClass::init(){
 	begin(sizeof(MyEEPROMStruct));
 	if (percentUsed() >= 0) {
 		get(0, eeprom);
-		}else{
+	}else{
 		doDefault();
 	}
 }

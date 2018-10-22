@@ -10,7 +10,6 @@
 
 #define __ESP8266_ESp8266__
 #define __ESP8266_ESP8266__
-#define _VMDEBUG 1
 #define ARDUINO 10803
 #define ARDUINO_MAIN
 #define printf iprintf
@@ -22,6 +21,8 @@
 #define ARDUINO 10803
 #define ARDUINO_ESP8266_GENERIC
 #define ARDUINO_ARCH_ESP8266
+//
+//
 
 #include "common.h" 
 #include "pins_arduino.h" 

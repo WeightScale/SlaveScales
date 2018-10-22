@@ -97,7 +97,7 @@ extern AsyncWebSocket ws;
 //void handleFileReadAdmin(AsyncWebServerRequest*);
 //void handleFileReadAuth(AsyncWebServerRequest*);
 void handleSettings(AsyncWebServerRequest * request);
-void handleAccessPoint(AsyncWebServerRequest*);
+//void handleAccessPoint(AsyncWebServerRequest*);
 void handleScaleProp(AsyncWebServerRequest*);
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);
 
